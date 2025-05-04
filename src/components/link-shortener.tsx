@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, FormEvent } from "react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -25,42 +23,36 @@ export function LinkShortener() {
   const [activeTab, setActiveTab] = useState("qrcode")
   const [isGenerating, setIsGenerating] = useState(false)
 
-  // Carregar histórico do localStorage
   useEffect(() => {
     const savedHistory = localStorage.getItem("linkHistory")
     if (savedHistory) {
       try {
-        const parsedHistory = JSON.parse(savedHistory)
-        // Converter strings de data para objetos Date
-        const historyWithDates = parsedHistory.map((item: any) => ({
+        const parsedHistory: Omit<LinkItem, 'createdAt'>[] = JSON.parse(savedHistory)
+        const historyWithDates = parsedHistory.map((item) => ({
           ...item,
           createdAt: new Date(item.createdAt),
         }))
         setHistory(historyWithDates)
-      } catch (e) {
-        console.error("Erro ao carregar histórico:", e)
+      } catch (error: any) {
+        console.error("Erro ao carregar histórico:", error)
       }
     }
   }, [])
 
-  // Salvar histórico no localStorage quando mudar
   useEffect(() => {
-    localStorage.setItem("linkHistory", JSON.stringify(history))
+    localStorage.setItem("linkHistory", JSON.stringify(history.map(item => ({ ...item, createdAt: item.createdAt.toISOString() }))))
   }, [history])
 
-  // Função para encurtar URL (simulada)
   const shortenUrl = (originalUrl: string): Promise<string> => {
     return new Promise((resolve) => {
-      // Simulando uma chamada de API
       setTimeout(() => {
-        // Gerar um código aleatório de 6 caracteres
-        const randomCode = Math.random().toString(36).substring(2, 8)
+        const randomCode = Math.random().toString(36).slice(2, 8)
         resolve(`https://short.url/${randomCode}`)
       }, 800)
     })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     if (!url) {
@@ -70,10 +62,9 @@ export function LinkShortener() {
       return
     }
 
-    // Validar URL
     try {
       new URL(url)
-    } catch (e) {
+    } catch {
       toast.error("URL inválida", {
         description: "Por favor, insira uma URL válida",
       })
@@ -83,17 +74,23 @@ export function LinkShortener() {
     setIsGenerating(true)
 
     try {
-      const newItem: LinkItem = {
-        id: Date.now().toString(),
-        originalUrl: url,
-        createdAt: new Date(),
-      }
+      let newItem: LinkItem
 
       if (activeTab === "shortener") {
         const shortUrl = await shortenUrl(url)
-        newItem.shortUrl = shortUrl
+        newItem = {
+          id: Date.now().toString(),
+          originalUrl: url,
+          shortUrl,
+          createdAt: new Date(),
+        }
       } else {
-        newItem.qrCode = true
+        newItem = {
+          id: Date.now().toString(),
+          originalUrl: url,
+          qrCode: true,
+          createdAt: new Date(),
+        }
       }
 
       setHistory([newItem, ...history])
@@ -101,7 +98,7 @@ export function LinkShortener() {
       toast.success(activeTab === "qrcode" ? "QR Code gerado" : "URL encurtada", {
         description: "Operação concluída com sucesso!",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Erro", {
         description: "Ocorreu um erro ao processar sua solicitação",
       })

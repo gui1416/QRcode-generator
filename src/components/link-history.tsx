@@ -31,12 +31,12 @@ export function LinkHistory({ history, onCopy, onDelete }: LinkHistoryProps) {
   const filteredHistory = history.filter((item) => {
     if (activeHistoryTab === "all") return true
     if (activeHistoryTab === "qrcode") return item.qrCode
-    if (activeHistoryTab === "shortener") return item.shortUrl
+    if (activeHistoryTab === "shortener") return !!item.shortUrl
     return true
   })
 
   const downloadQRCode = (id: string, url: string) => {
-    const canvas = document.getElementById(`qr-canvas-${id}`) as HTMLCanvasElement
+    const canvas = document.getElementById(`qr-canvas-${id}`) as HTMLCanvasElement | null
     if (canvas && canvas.toDataURL) {
       const pngUrl = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream")
 
