@@ -1,4 +1,4 @@
-//components/ui/use-toast
+//hooks/use-toast
 "use client"
 
 // Inspired by react-hot-toast library
@@ -42,7 +42,7 @@ type Action =
     }
   | {
       type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
+      toast: Partial<ToasterToast> & { id: ToasterToast["id"] }
     }
   | {
       type: ActionType["DISMISS_TOAST"]
@@ -146,7 +146,7 @@ type Toast = Omit<ToasterToast, "id">
 function toast({ ...props }: Toast) {
   const id = genId()
 
-  const update = (props: ToasterToast) =>
+  const update = (props: Omit<ToasterToast, "id">) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
