@@ -17,33 +17,44 @@ type LinkItem = {
   createdAt: Date
 }
 
+const HISTORY_LIMIT = 30 // Limite de itens no histórico
+
 export function LinkShortener() {
   const [url, setUrl] = useState("")
   const [history, setHistory] = useState<LinkItem[]>([])
-  const [activeTab, setActiveTab] = useState("qrcode")
+  const [activeTab, setActiveTab] = useState<"qrcode" | "shortener">("qrcode")
   const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     const savedHistory = localStorage.getItem("linkHistory")
     if (savedHistory) {
       try {
-        const parsedHistory: Omit<LinkItem, 'createdAt'>[] = JSON.parse(savedHistory)
-        const historyWithDates = parsedHistory.map((item) => ({
+        // Corrige o tipo para aceitar string ou Date
+        const parsedHistory: (Omit<LinkItem, 'createdAt'> & { createdAt: string | Date })[] = JSON.parse(savedHistory)
+        const historyWithDates: LinkItem[] = parsedHistory.map((item) => ({
           ...item,
           createdAt: new Date(item.createdAt),
         }))
         setHistory(historyWithDates)
-      } catch (error: any) {
-        console.error("Erro ao carregar histórico:", error)
+      } catch {
+        console.error("Erro ao carregar histórico")
       }
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("linkHistory", JSON.stringify(history.map(item => ({ ...item, createdAt: item.createdAt.toISOString() }))))
+    localStorage.setItem(
+      "linkHistory",
+      JSON.stringify(
+        history.map(item => ({
+          ...item,
+          createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : new Date(item.createdAt).toISOString(),
+        }))
+      )
+    )
   }, [history])
 
-  const shortenUrl = (originalUrl: string): Promise<string> => {
+  const shortenUrl = (): Promise<string> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const randomCode = Math.random().toString(36).slice(2, 8)
@@ -54,6 +65,8 @@ export function LinkShortener() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+
+    if (isGenerating) return // Evita múltiplos envios
 
     if (!url) {
       toast.error("URL vazia", {
@@ -77,7 +90,7 @@ export function LinkShortener() {
       let newItem: LinkItem
 
       if (activeTab === "shortener") {
-        const shortUrl = await shortenUrl(url)
+        const shortUrl = await shortenUrl()
         newItem = {
           id: Date.now().toString(),
           originalUrl: url,
@@ -93,12 +106,14 @@ export function LinkShortener() {
         }
       }
 
-      setHistory([newItem, ...history])
+      // Limita o histórico ao tamanho máximo
+      setHistory([newItem, ...history].slice(0, HISTORY_LIMIT))
+      setUrl("") // Limpa o campo após gerar
 
       toast.success(activeTab === "qrcode" ? "QR Code gerado" : "URL encurtada", {
         description: "Operação concluída com sucesso!",
       })
-    } catch (error: any) {
+    } catch {
       toast.error("Erro", {
         description: "Ocorreu um erro ao processar sua solicitação",
       })
@@ -107,11 +122,17 @@ export function LinkShortener() {
     }
   }
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success("Copiado!", {
-      description: "Conteúdo copiado para a área de transferência",
-    })
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success("Copiado!", {
+        description: "Conteúdo copiado para a área de transferência",
+      })
+    } catch {
+      toast.error("Erro ao copiar", {
+        description: "Não foi possível copiar para a área de transferência",
+      })
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -129,7 +150,7 @@ export function LinkShortener() {
           <CardDescription>Insira uma URL para gerar um QR Code ou encurtá-la</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "qrcode" | "shortener")} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="qrcode" className="flex items-center gap-2">
                 <QrCode className="h-4 w-4" />
