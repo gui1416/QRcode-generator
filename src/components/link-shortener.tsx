@@ -54,19 +54,34 @@ export function LinkShortener() {
     )
   }, [history])
 
-  const shortenUrl = (): Promise<string> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const randomCode = Math.random().toString(36).slice(2, 8)
-        resolve(`https://short.url/${randomCode}`)
-      }, 800)
-    })
+  const shortenUrl = async (longUrl: string): Promise<string> => {
+    try {
+      const response = await fetch("https://ulvis.net/api/v1/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: longUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("A resposta da rede não foi boa");
+      }
+
+      const data = await response.json();
+      return data.data.url;
+    } catch (error) {
+      console.error("Falha ao encurtar o URL:", error);
+      throw error;
+    }
   }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
-    if (isGenerating) return // Evita múltiplos envios
+    if (isGenerating) return
 
     if (!url) {
       toast.error("URL vazia", {
@@ -90,7 +105,7 @@ export function LinkShortener() {
       let newItem: LinkItem
 
       if (activeTab === "shortener") {
-        const shortUrl = await shortenUrl()
+        const shortUrl = await shortenUrl(url)
         newItem = {
           id: Date.now().toString(),
           originalUrl: url,
