@@ -29,7 +29,6 @@ export function LinkShortener() {
     const savedHistory = localStorage.getItem("linkHistory")
     if (savedHistory) {
       try {
-        // Corrige o tipo para aceitar string ou Date
         const parsedHistory: (Omit<LinkItem, 'createdAt'> & { createdAt: string | Date })[] = JSON.parse(savedHistory)
         const historyWithDates: LinkItem[] = parsedHistory.map((item) => ({
           ...item,
@@ -54,29 +53,27 @@ export function LinkShortener() {
     )
   }, [history])
 
-  const shortenUrl = async (longUrl: string): Promise<string> => {
+  const shortenUrl = async (urlToShorten: string): Promise<string> => {
     try {
-      const response = await fetch("https://ulvis.net/api/v1/shorten", {
+      const response = await fetch("/api/shorten", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          url: longUrl,
-        }),
+        body: JSON.stringify({ url: urlToShorten }),
       });
-
-      if (!response.ok) {
-        throw new Error("A resposta da rede não foi boa");
-      }
-
       const data = await response.json();
-      return data.data.url;
+      if (data.shrtlnk) {
+        return data.shrtlnk;
+      } else {
+        throw new Error(data.message || "Failed to shorten URL");
+      }
     } catch (error) {
-      console.error("Falha ao encurtar o URL:", error);
+      console.error("Error shortening URL:", error);
       throw error;
     }
-  }
+  };
+
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -121,9 +118,8 @@ export function LinkShortener() {
         }
       }
 
-      // Limita o histórico ao tamanho máximo
       setHistory([newItem, ...history].slice(0, HISTORY_LIMIT))
-      setUrl("") // Limpa o campo após gerar
+      setUrl("")
 
       toast.success(activeTab === "qrcode" ? "QR Code gerado" : "URL encurtada", {
         description: "Operação concluída com sucesso!",
