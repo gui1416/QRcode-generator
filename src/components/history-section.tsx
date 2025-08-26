@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,17 @@ export function HistorySection() {
  const { history, removeFromHistory } = useHistory()
  const [filter, setFilter] = useState("all")
  const isMobile = useMobile()
+
+ // Força atualização quando o localStorage mudar (em abas diferentes ou outros componentes)
+ useEffect(() => {
+  const onStorage = (e: StorageEvent) => {
+   if (e.key === "url-history") {
+    window.location.reload()
+   }
+  }
+  window.addEventListener("storage", onStorage)
+  return () => window.removeEventListener("storage", onStorage)
+ }, [])
 
  const filteredHistory = history.filter((item) => {
   if (filter === "all") return true
