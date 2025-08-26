@@ -1,23 +1,31 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from "next/server"
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
  try {
-  const { url } = await request.json();
+  const { url } = await request.json()
 
-  const encodedUrl = encodeURIComponent(url);
-
-  const response = await fetch(`https://is.gd/create.php?format=json&url=${encodedUrl}`);
-
-  const data = await response.json();
-
-  if (data.shorturl) {
-   return NextResponse.json({ shrtlnk: data.shorturl });
-  } else {
-   return NextResponse.json({ error: data.errormessage || 'Failed to shorten URL' }, { status: 400 });
+  if (!url) {
+   return NextResponse.json({ error: "URL é obrigatória" }, { status: 400 })
   }
- } catch (error: unknown) {
-  console.error(error);
-  const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-  return NextResponse.json({ error: errorMessage }, { status: 500 });
+
+  // Validate URL format
+  try {
+   new URL(url)
+  } catch {
+   return NextResponse.json({ error: "URL inválida" }, { status: 400 })
+  }
+
+  // Call is.gd API
+  const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(url)}`)
+  const data = await response.json()
+
+  if (data.error) {
+   return NextResponse.json({ error: data.error }, { status: 400 })
+  }
+
+  return NextResponse.json({ shorturl: data.shorturl })
+ } catch (error) {
+  console.error("Error shortening URL:", error)
+  return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
  }
 }
