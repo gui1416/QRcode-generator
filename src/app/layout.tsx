@@ -5,11 +5,11 @@ import { GeistMono } from "geist/font/mono"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { HistoryProvider } from "@/contexts/history-context"
 
 export const metadata: Metadata = {
   title: "QR Code & Encurtador de Links",
   description: "Gerador de QR Code e encurtador de URLs com histórico",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+          <HistoryProvider>{children}</HistoryProvider>
           <Toaster />
         </ThemeProvider>
       </body>
