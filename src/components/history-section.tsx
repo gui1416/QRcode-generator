@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -9,24 +9,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { QRCodeSVG } from "qrcode.react"
 import { Copy, ExternalLink, Trash2, Download, QrCode, Link } from "lucide-react"
 import { toast } from "sonner"
-import { useHistory } from "@/hooks/use-history"
+import { useHistory } from "@/contexts/history-context"
 import { useMobile } from "@/hooks/use-mobile"
 
 export function HistorySection() {
  const { history, removeFromHistory } = useHistory()
  const [filter, setFilter] = useState("all")
  const isMobile = useMobile()
-
- // Força atualização quando o localStorage mudar (em abas diferentes ou outros componentes)
- useEffect(() => {
-  const onStorage = (e: StorageEvent) => {
-   if (e.key === "url-history") {
-    window.location.reload()
-   }
-  }
-  window.addEventListener("storage", onStorage)
-  return () => window.removeEventListener("storage", onStorage)
- }, [])
 
  const filteredHistory = history.filter((item) => {
   if (filter === "all") return true

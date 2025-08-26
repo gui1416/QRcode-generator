@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface HistoryItem {
  id: string
@@ -11,15 +11,24 @@ export interface HistoryItem {
  createdAt: Date
 }
 
-export function useHistory() {
+interface HistoryContextType {
+ history: HistoryItem[]
+ addToHistory: (item: Omit<HistoryItem, "id" | "createdAt">) => void
+ removeFromHistory: (id: string) => void
+ clearHistory: () => void
+}
+
+const HistoryContext = createContext<HistoryContextType | undefined>(undefined)
+
+export function HistoryProvider({ children }: { children: ReactNode }) {
  const [history, setHistory] = useState<HistoryItem[]>([])
 
  useEffect(() => {
   const savedHistory = localStorage.getItem("url-history")
   if (savedHistory) {
-   const parsed: Array<Omit<HistoryItem, "createdAt"> & { createdAt: string | Date }> = JSON.parse(savedHistory)
+   const parsed = JSON.parse(savedHistory)
    setHistory(
-    parsed.map((item) => ({
+    parsed.map((item: any) => ({
      ...item,
      createdAt: new Date(item.createdAt),
     })),
@@ -50,10 +59,17 @@ export function useHistory() {
   localStorage.removeItem("url-history")
  }
 
- return {
-  history,
-  addToHistory,
-  removeFromHistory,
-  clearHistory,
+ return (
+  <HistoryContext.Provider value={{ history, addToHistory, removeFromHistory, clearHistory }}>
+   {children}
+  </HistoryContext.Provider>
+ )
+}
+
+export function useHistory() {
+ const context = useContext(HistoryContext)
+ if (context === undefined) {
+  throw new Error("useHistory must be used within a HistoryProvider")
  }
+ return context
 }

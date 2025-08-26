@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Download, Link, QrCode } from "lucide-react"
 import { toast } from "sonner"
-import { useHistory } from "@/hooks/use-history"
+import { useHistory } from "@/contexts/history-context"
 import { useMobile } from "@/hooks/use-mobile"
 
 export function QRGenerator() {
