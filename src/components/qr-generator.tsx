@@ -22,7 +22,7 @@ export function QRGenerator() {
   try {
    new URL(string)
    return true
-  } catch (_) {
+  } catch {
    return false
   }
  }
@@ -83,7 +83,7 @@ export function QRGenerator() {
 
    toast.success("URL encurtada com sucesso!")
    setUrl("")
-  } catch (error) {
+  } catch {
    toast.error("Erro ao encurtar URL")
   } finally {
    setIsLoading(false)

@@ -26,9 +26,9 @@ export function HistoryProvider({ children }: { children: ReactNode }) {
  useEffect(() => {
   const savedHistory = localStorage.getItem("url-history")
   if (savedHistory) {
-   const parsed = JSON.parse(savedHistory)
+   const parsed: Array<Omit<HistoryItem, "createdAt"> & { createdAt: string | Date }> = JSON.parse(savedHistory)
    setHistory(
-    parsed.map((item: any) => ({
+    parsed.map((item) => ({
      ...item,
      createdAt: new Date(item.createdAt),
     })),
