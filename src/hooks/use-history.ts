@@ -14,7 +14,7 @@ export interface HistoryItem {
 export function useHistory() {
  const [history, setHistory] = useState<HistoryItem[]>([])
 
- // Atualiza o estado sempre que o localStorage mudar (inclusive em outras abas ou por outros componentes)
+ // Atualiza o estado sempre que o localStorage mudar em outras abas
  useEffect(() => {
   const updateHistory = () => {
    const savedHistory = localStorage.getItem("url-history")
@@ -34,8 +34,8 @@ export function useHistory() {
   return () => window.removeEventListener("storage", updateHistory)
  }, [])
 
- useEffect(() => {
-  // Atualiza o estado local sempre que o próprio componente alterar o localStorage
+ // Atualiza o estado imediatamente após qualquer operação local
+ const syncHistory = () => {
   const savedHistory = localStorage.getItem("url-history")
   if (savedHistory) {
    const parsed = JSON.parse(savedHistory)
@@ -48,7 +48,7 @@ export function useHistory() {
   } else {
    setHistory([])
   }
- }, [history.length])
+ }
 
  const addToHistory = (item: Omit<HistoryItem, "id" | "createdAt">) => {
   const newItem: HistoryItem = {
@@ -56,21 +56,23 @@ export function useHistory() {
    id: Date.now().toString(),
    createdAt: new Date(),
   }
-
   const updatedHistory = [newItem, ...history].slice(0, 30)
   setHistory(updatedHistory)
   localStorage.setItem("url-history", JSON.stringify(updatedHistory))
+  syncHistory()
  }
 
  const removeFromHistory = (id: string) => {
   const updatedHistory = history.filter((item) => item.id !== id)
   setHistory(updatedHistory)
   localStorage.setItem("url-history", JSON.stringify(updatedHistory))
+  syncHistory()
  }
 
  const clearHistory = () => {
   setHistory([])
   localStorage.removeItem("url-history")
+  syncHistory()
  }
 
  return {
